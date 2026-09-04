@@ -1,21 +1,14 @@
-name: Deploy to Cloudflare Pages
+name: Disabled Cloudflare Pages deploy
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
-  deploy:
+  disabled:
     runs-on: ubuntu-latest
+    if: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: domislink-www
-          directory: .
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
-          wranglerVersion: '3'
+      - name: Disabled
+        run: echo "Cloudflare Pages deploy disabled. Use GitHub Pages workflow instead." 
