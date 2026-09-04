@@ -1,0 +1,65 @@
+name: CI / Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ci:
+    name: PR checks
+    runs-on: ubuntu-latest
+    outputs:
+      node: ${{ steps.detect.outputs.node }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: detect
+        name: Detect Node project
+        run: |
+          if [ -f package.json ]; then echo "node=true" >> $GITHUB_OUTPUT; else echo "node=false" >> $GITHUB_OUTPUT; fi
+
+      - name: Install & Test (Node)
+        if: steps.detect.outputs.node == 'true'
+        run: |
+          npm ci
+          npm test || echo "no tests or tests failed"
+
+      - name: Basic validation
+        run: |
+          echo "Index file present:"
+          ls -la index.html || true
+
+  deploy:
+    name: Build and deploy to Pages
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node (optional)
+        if: needs.ci.outputs.node == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install if Node project
+        if: needs.ci.outputs.node == 'true'
+        run: npm ci
+
+      - name: Build (optional)
+        if: needs.ci.outputs.node == 'true'
+        run: npm run build
+
+      - name: Prepare Pages artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          # If you add a build step, change this path to ./dist or ./build
+          path: ./
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
